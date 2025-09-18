@@ -1,0 +1,595 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Professional corporate color scheme */
+  --background: #e8e8e7; /* Darker muted gray background */
+  --foreground: #1f2937; /* Dark gray text */
+  --card: #ebebea; /* Slightly darker light muted gray cards */
+  --card-foreground: #1f2937; /* Dark text on cards */
+  --popover: #e8e8e7; /* Darker muted gray popover background */
+  --popover-foreground: #1f2937; /* Dark popover text */
+  --primary: #880000; /* Corporate red (wine red) */
+  --primary-foreground: #ffffff; /* White text on primary */
+  --secondary: #ddddd9; /* Darker muted gray secondary */
+  --secondary-foreground: #475569; /* Medium gray text */
+  --muted: #ddddd9; /* Darker muted gray */
+  --muted-foreground: #64748b; /* Medium gray muted text */
+  --accent: #880000; /* Corporate red accent */
+  --accent-foreground: #ffffff; /* White text on accent */
+  --destructive: #ef4444; /* Red for destructive actions */
+  --destructive-foreground: #ffffff; /* White text on destructive */
+  --border: #c9c9c7; /* Darker muted gray borders */
+  --input: #e8e8e7; /* Darker muted gray input backgrounds */
+  --ring: #880000; /* Red focus ring */
+  --chart-1: #880000; /* Corporate red */
+  --chart-2: #059669; /* Success green */
+  --chart-3: #374151; /* Dark gray instead of blue */
+  --chart-4: #7c3aed; /* Purple */
+  --chart-5: #ea580c; /* Orange */
+  --radius: 0.5rem; /* Rounded corners for modern look */
+  --sidebar: #5b595b; /* Medium gray sidebar */
+  --sidebar-foreground: #ffffff; /* White sidebar text */
+  --sidebar-primary: #880000; /* Red for active sidebar items */
+  --sidebar-primary-foreground: #ffffff; /* White text on active sidebar */
+  --sidebar-accent: #880000; /* Red sidebar accent */
+  --sidebar-accent-foreground: #ffffff; /* White text on sidebar accent */
+  --sidebar-border: #6b6869; /* Medium gray sidebar borders */
+  --sidebar-ring: #880000; /* Red sidebar focus ring */
+}
+
+.dark {
+  /* Updated dark mode colors to use black backgrounds and keep #880000 red */
+  --background: #000000; /* Pure black background */
+  --foreground: #ffffff; /* White text */
+  --card: #111111; /* Very dark gray cards */
+  --card-foreground: #ffffff; /* White text on cards */
+  --popover: #000000; /* Black popover background */
+  --popover-foreground: #ffffff; /* White popover text */
+  --primary: #880000; /* Keep the corporate red */
+  --primary-foreground: #ffffff; /* White text on primary */
+  --secondary: #222222; /* Dark gray secondary */
+  --secondary-foreground: #ffffff; /* White text on secondary */
+  --muted: #333333; /* Medium dark gray */
+  --muted-foreground: #cccccc; /* Light gray muted text */
+  --accent: #880000; /* Keep the corporate red accent */
+  --accent-foreground: #ffffff; /* White text on accent */
+  --destructive: #ef4444; /* Red for destructive actions */
+  --destructive-foreground: #ffffff; /* White text on destructive */
+  --border: #333333; /* Dark gray borders */
+  --input: #222222; /* Dark gray input backgrounds */
+  --ring: #880000; /* Red focus ring */
+  --chart-1: #880000; /* Corporate red */
+  --chart-2: #059669; /* Success green */
+  --chart-3: #666666; /* Medium gray */
+  --chart-4: #7c3aed; /* Purple */
+  --chart-5: #ea580c; /* Orange */
+  --sidebar: #111111; /* Very dark sidebar */
+  --sidebar-foreground: #ffffff; /* White sidebar text */
+  --sidebar-primary: #880000; /* Red for active sidebar items */
+  --sidebar-primary-foreground: #ffffff; /* White text on active sidebar */
+  --sidebar-accent: #880000; /* Red sidebar accent */
+  --sidebar-accent-foreground: #ffffff; /* White text on sidebar accent */
+  --sidebar-border: #333333; /* Dark gray sidebar borders */
+  --sidebar-ring: #880000; /* Red sidebar focus ring */
+}
+
+@theme inline {
+  /* Updated font configuration to use VO font */
+  --font-sans: var(--font-vo);
+  --font-mono: var(--font-vo);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    /* Adding smooth transitions to all elements for dark mode switching */
+    transition: background-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  body {
+    /* Using clean sans-serif font for professional look */
+    @apply bg-background text-foreground font-sans;
+    /* Adding smooth background transition for body */
+    transition: background-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Adding smooth transitions to html element for dark class changes */
+  html {
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
+
+/* Corporate professional styling replacing sci-fi elements */
+@layer utilities {
+  /* Adding 86 watermark and grid pattern inspired by Starfield interface */
+  .corporate-background {
+    position: relative;
+    background: var(--background);
+    /* Grid pattern that adapts to dark mode */
+    background-image: linear-gradient(rgba(107, 114, 128, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(107, 114, 128, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    /* Adding smooth background transition */
+    transition: background-color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-image 0.8s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Updated watermark for dark mode visibility */
+  .corporate-background::before {
+    content: "八十六";
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: min(25vw, 20vh);
+    font-weight: 900;
+    /* Dynamic color that works in both light and dark mode */
+    color: rgba(136, 0, 0, 0.05);
+    z-index: 0;
+    pointer-events: none;
+    font-family: "Noto Sans CJK JP", "Hiragino Sans", "Yu Gothic", "Meiryo", "Arial Unicode MS", sans-serif;
+    letter-spacing: 0.2em;
+    text-shadow: 0 0 50px rgba(136, 0, 0, 0.02);
+    font-stretch: condensed;
+    text-transform: uppercase;
+    -webkit-text-stroke: 2px rgba(136, 0, 0, 0.02);
+    text-rendering: geometricPrecision;
+    filter: contrast(1.2) brightness(1.1);
+    font-variant-numeric: tabular-nums;
+    width: auto;
+    height: auto;
+    line-height: 1;
+    max-width: 90vw;
+    white-space: nowrap;
+    /* Adding smooth color transition to watermark */
+    transition: color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), text-shadow 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Enhanced company branding with better contrast */
+  .corporate-background::after {
+    content: "POWERED BY 86";
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(136, 0, 0, 0.6);
+    z-index: 0;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    letter-spacing: 0.15em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    /* Adding smooth color transition to branding text */
+    transition: color 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), text-shadow 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Adding cool dark mode transition animation */
+  .dark-mode-transition {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, rgba(136, 0, 0, 0.1) 0%, transparent 70%);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    animation: darkModeRipple 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  @keyframes darkModeRipple {
+    0% {
+      opacity: 0;
+      transform: scale(0);
+    }
+    30% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    70% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(2);
+    }
+  }
+
+  /* Adding mode switch button special effects */
+  .mode-switch-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .mode-switch-button::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: radial-gradient(circle, rgba(136, 0, 0, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: -1;
+  }
+
+  .mode-switch-button:hover::before {
+    width: 200px;
+    height: 200px;
+  }
+
+  .mode-switch-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Enhanced transitions for all corporate elements */
+  .corporate-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    /* Ensuring cards appear above watermark */
+    position: relative;
+    z-index: 1;
+    /* Adding smooth transitions to cards with enhanced dark mode support */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateY(0) scale(1);
+  }
+
+  .corporate-card:hover {
+    /* Enhanced hover effect for cards */
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 20px 40px 0 rgb(0 0 0 / 0.15), 0 8px 16px -4px rgb(0 0 0 / 0.1);
+    border-color: rgba(136, 0, 0, 0.2);
+  }
+
+  .corporate-sidebar {
+    background: var(--sidebar);
+    border-right: 1px solid var(--sidebar-border);
+    width: 200px;
+    /* Adding smooth transitions to sidebar */
+    transition: background-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .corporate-sidebar-item {
+    background: transparent;
+    border: none;
+    color: var(--sidebar-foreground);
+    /* Enhanced transitions with more sophisticated animations and dark mode support */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    font-weight: 500;
+    border-radius: var(--radius);
+    margin: 4px 8px;
+    transform: translateX(0) scale(1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Adding ripple effect for sidebar items */
+  .corporate-sidebar-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .corporate-sidebar-item:hover::before {
+    left: 100%;
+  }
+
+  .corporate-sidebar-item:hover,
+  .corporate-sidebar-item.active {
+    background: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+    /* Enhanced transform with scale and glow effect */
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(136, 0, 0, 0.25), 0 0 20px rgba(136, 0, 0, 0.1);
+  }
+
+  /* Adding pulse animation for active sidebar items */
+  .corporate-sidebar-item.active {
+    animation: pulse-glow 2s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 8px 25px rgba(136, 0, 0, 0.25), 0 0 20px rgba(136, 0, 0, 0.1);
+    }
+    50% {
+      box-shadow: 0 8px 25px rgba(136, 0, 0, 0.35), 0 0 30px rgba(136, 0, 0, 0.2);
+    }
+  }
+
+  .corporate-header {
+    background: var(--sidebar);
+    border-bottom: 1px solid var(--border);
+    color: var(--sidebar-foreground);
+    /* Ensuring header appears above watermark */
+    position: relative;
+    z-index: 2;
+    /* Adding smooth transitions to header */
+    transition: background-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  /* Updated button styling for dark mode */
+  .corporate-button {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-weight: 500;
+    color: var(--foreground);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Adding shimmer effect for buttons */
+  .corporate-button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(136, 0, 0, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .corporate-button:hover::before {
+    left: 100%;
+  }
+
+  .corporate-button:hover {
+    background: var(--muted);
+    border-color: var(--primary);
+    /* Adding scale and shadow on hover */
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 8px 20px rgba(136, 0, 0, 0.15);
+  }
+
+  .corporate-button:active {
+    /* Adding press animation */
+    transform: scale(0.98) translateY(0px);
+    transition: all 0.1s ease;
+  }
+
+  .corporate-primary {
+    background: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: var(--radius);
+    color: var(--primary-foreground);
+    font-weight: 600;
+    /* Enhanced primary button animations with dark mode transitions */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: scale(1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Adding glow effect for primary buttons */
+  .corporate-primary::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+
+  .corporate-primary:hover::before {
+    left: 100%;
+  }
+
+  .corporate-primary:hover {
+    background: #660000;
+    border-color: #660000;
+    /* Enhanced primary button hover with glow */
+    transform: scale(1.08) translateY(-3px);
+    box-shadow: 0 12px 30px rgba(136, 0, 0, 0.3), 0 0 25px rgba(136, 0, 0, 0.2);
+  }
+
+  .corporate-primary:active {
+    /* Primary button press animation */
+    transform: scale(1.02) translateY(-1px);
+    transition: all 0.1s ease;
+  }
+
+  .status-online {
+    background: #10b981;
+    color: white;
+    border-radius: 9999px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .stats-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  /* Adding smooth content transitions */
+  /* Updated content areas for dark mode */
+  .corporate-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Enhanced content area transitions for menu switching */
+  .menu-content-transition {
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+
+  .menu-content-enter {
+    animation: slideInFromRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+
+  .menu-content-exit {
+    animation: slideOutToLeft 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+  }
+
+  @keyframes slideInFromRight {
+    0% {
+      opacity: 0;
+      transform: translateX(30px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes slideOutToLeft {
+    0% {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(-30px) scale(0.95);
+    }
+  }
+
+  /* Enhanced grid item transitions for smoother menu content changes */
+  .menu-grid-item {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  .menu-grid-item:nth-child(odd) {
+    animation-delay: 0.1s;
+  }
+
+  .menu-grid-item:nth-child(even) {
+    animation-delay: 0.2s;
+  }
+
+  /* Staggered animation for menu items */
+  .menu-items-stagger .menu-grid-item {
+    animation: fadeInStagger 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+  }
+
+  .menu-items-stagger .menu-grid-item:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(4) {
+    animation-delay: 0.25s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(5) {
+    animation-delay: 0.3s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(6) {
+    animation-delay: 0.35s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(7) {
+    animation-delay: 0.4s;
+  }
+  .menu-items-stagger .menu-grid-item:nth-child(8) {
+    animation-delay: 0.45s;
+  }
+
+  @keyframes fadeInStagger {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Adding section header styling with gray colors */
+  .corporate-section-header {
+    /* Updated section header background from #374151 to #5B595B to match sidebar */
+    background: #5b595b;
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    /* Adding smooth transitions to section header */
+    transition: background-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.6s
+      cubic-bezier(0.25, 0.46, 0.45, 0.94), border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+}
