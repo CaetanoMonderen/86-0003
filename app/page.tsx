@@ -204,12 +204,27 @@ export default function MosselweekendCashier() {
           cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem,
         )
       }
+
+      let actualPrice = item.price
+      if (item.jetons) {
+        // Extract jeton information and calculate price
+        const jetonText = item.jetons.toLowerCase()
+        if (jetonText.includes("gele jeton")) {
+          const geleJetonCount = Number.parseInt(jetonText.match(/(\d+)\s*gele jeton/)?.[1] || "1")
+          actualPrice += geleJetonCount * 2.5 // GELE JETON price
+        }
+        if (jetonText.includes("rode jeton")) {
+          const rodeJetonCount = Number.parseInt(jetonText.match(/(\d+)\s*rode jeton/)?.[1] || "1")
+          actualPrice += rodeJetonCount * 3.5 // RODE JETON price
+        }
+      }
+
       return [
         ...prev,
         {
           id: item.id,
           name: item.name,
-          price: item.price,
+          price: actualPrice, // Use calculated price including jetons
           quantity: 1,
           jetons: item.jetons,
         },
