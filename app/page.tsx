@@ -32,8 +32,8 @@ const menuItems = [
   { id: 11, name: "RODE JETON", price: 3.5, category: "jetons" },
 
   // Desserts
-  { id: 12, name: "CHOCOMOUSSE", price: 5.0, category: "desserts" },
-  { id: 13, name: "FRISCO", price: 3.5, category: "desserts" },
+  { id: 12, name: "RIJSTPAP", price: 4.0, category: "desserts" },
+  { id: 13, name: "WATERIJSJE", price: 3.5, category: "desserts" },
 
   // Beverages with jetons
   { id: 14, name: "PILS", price: 0, category: "dranken", jetons: "1 GELE JETON" },
@@ -91,6 +91,7 @@ export default function MosselweekendCashier() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
   const [cashAmount, setCashAmount] = useState("")
   const [showCashInput, setShowCashInput] = useState(false)
+  const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
 
   // F.I.D.O chatbot state and responses
   const [showFido, setShowFido] = useState(false)
@@ -554,7 +555,7 @@ export default function MosselweekendCashier() {
   }
 
   const processOrder = async () => {
-    if (cart.length === 0 || !customerName.trim()) return
+    if (cart.length === 0) return
 
     if (paymentMethod === "cash" && showCashInput) {
       const cash = Number.parseFloat(cashAmount)
@@ -569,8 +570,8 @@ export default function MosselweekendCashier() {
     const newOrder: Order = {
       id: Date.now().toString(),
       order_code: orderCode,
-      customer_name: customerName.trim(),
-      customerName: customerName.trim(),
+      customer_name: customerName.trim() || "Anonieme klant",
+      customerName: customerName.trim() || "Anonieme klant",
       items: [...cart],
       total: calculateTotal(),
       payment_method: paymentMethod,
@@ -583,7 +584,7 @@ export default function MosselweekendCashier() {
 
       const { error } = await supabase.from("orders").insert({
         order_code: orderCode,
-        customer_name: customerName.trim(),
+        customer_name: customerName.trim() || "Anonieme klant",
         items: cart,
         total: calculateTotal(),
         payment_method: paymentMethod,
@@ -743,12 +744,15 @@ export default function MosselweekendCashier() {
   const currentCategory = categories.find((cat) => cat.id === activeCategory)
 
   const handleCheckoutClick = () => {
-    if (paymentMethod === "cash") {
+    if (paymentMethod === "payconic") {
+      setShowPayconicConfirm(true)
+    } else if (paymentMethod === "cash") {
       setShowCashInput(true)
+      setShowCheckoutConfirm(true)
     } else {
       setShowCashInput(false)
+      setShowCheckoutConfirm(true)
     }
-    setShowCheckoutConfirm(true)
   }
 
   const calculateChange = () => {
@@ -758,13 +762,21 @@ export default function MosselweekendCashier() {
     return Math.max(0, cash - total)
   }
 
+  const handlePayconicConfirmation = async (success: boolean) => {
+    setShowPayconicConfirm(false)
+    if (success) {
+      await processOrder()
+    } else {
+      alert("Payconic betaling mislukt. Probeer opnieuw of kies een andere betaalmethode.")
+    }
+  }
+
   return (
     <div className="min-h-screen corporate-background">
       <header className="corporate-header shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img src="/images/86-logo.png" alt="86 Logo" className="w-12 h-12 object-contain rounded-lg" />
               <div>
                 <h1 className="text-2xl font-bold text-white leading-tight">Mosselweekend Kassasysteem</h1>
               </div>
@@ -878,7 +890,7 @@ export default function MosselweekendCashier() {
             <div className="bg-muted p-4 rounded-lg">
               <h4 className="font-semibold mb-2">Order Summary</h4>
               <p>
-                <strong>Customer:</strong> {customerName}
+                <strong>Customer:</strong> {customerName || "Anonieme klant"}
               </p>
               <p>
                 <strong>Payment Method:</strong> {paymentMethod === "cash" ? "Cash" : "Payconic"}
@@ -945,6 +957,35 @@ export default function MosselweekendCashier() {
               </Button>
               <Button onClick={processOrder} className="flex-1 corporate-primary" disabled={isUploading}>
                 {isUploading ? "Processing..." : "Confirm Payment"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showPayconicConfirm} onOpenChange={setShowPayconicConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5 text-blue-600" />
+              Payconiq Betaling
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-semibold mb-2 text-blue-800 dark:text-blue-200">Betaling Controle</h4>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                Klant heeft geprobeerd te betalen via Payconiq voor €{calculateTotal().toFixed(2)}
+              </p>
+              <p className="font-medium text-blue-800 dark:text-blue-200">Is de transactie gelukt?</p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={() => handlePayconicConfirmation(false)} variant="outline" className="flex-1">
+                Nee, Mislukt
+              </Button>
+              <Button onClick={() => handlePayconicConfirmation(true)} className="flex-1 corporate-primary">
+                Ja, Gelukt
               </Button>
             </div>
           </div>
@@ -1417,7 +1458,7 @@ export default function MosselweekendCashier() {
                             <Button
                               onClick={handleCheckoutClick}
                               className="flex-1 corporate-primary"
-                              disabled={cart.length === 0 || !customerName.trim()}
+                              disabled={cart.length === 0}
                             >
                               Afrekenen
                             </Button>

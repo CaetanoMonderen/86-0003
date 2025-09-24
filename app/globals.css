@@ -187,7 +187,7 @@
 
   /* Enhanced company branding with better contrast */
   .corporate-background::after {
-    content: "POWERED BY 86";
+    content: "POWERED BY CM's 86";
     position: fixed;
     bottom: 20px;
     right: 20px;
