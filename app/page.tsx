@@ -32,7 +32,7 @@ const menuItems = [
   { id: 11, name: "RODE JETON", price: 3.5, category: "jetons" },
 
   // Desserts
-  { id: 12, name: "RIJSTPAP", price: 4.0, category: "desserts" },
+  { id: 12, name: "RIJSTPAP", price: 5.0, category: "desserts" },
   { id: 13, name: "WATERIJSJE", price: 3.5, category: "desserts" },
 
   // Beverages with jetons
@@ -1488,6 +1488,49 @@ export default function MosselweekendCashier() {
                           <div className="flex justify-between">
                             <span>Payconic betalingen:</span>
                             <span>{orders.filter((o) => o.payment_method === "payconic").length}</span>
+                          </div>
+
+                          <Separator className="my-3" />
+                          <div className="space-y-2">
+                            <h4 className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">
+                              Product Verkoop
+                            </h4>
+                            {(() => {
+                              // Calculate product quantities from all orders
+                              const productCounts: { [key: string]: number } = {}
+
+                              orders.forEach((order) => {
+                                order.items.forEach((item) => {
+                                  if (productCounts[item.name]) {
+                                    productCounts[item.name] += item.quantity
+                                  } else {
+                                    productCounts[item.name] = item.quantity
+                                  }
+                                })
+                              })
+
+                              // Sort by quantity (highest first) and take top 10
+                              const sortedProducts = Object.entries(productCounts)
+                                .sort(([, a], [, b]) => b - a)
+                                .slice(0, 10)
+
+                              if (sortedProducts.length === 0) {
+                                return (
+                                  <div className="text-xs text-muted-foreground text-center py-2">
+                                    Nog geen producten verkocht
+                                  </div>
+                                )
+                              }
+
+                              return sortedProducts.map(([productName, quantity]) => (
+                                <div key={productName} className="flex justify-between items-center">
+                                  <span className="text-xs truncate flex-1 mr-2" title={productName}>
+                                    {productName.length > 20 ? `${productName.substring(0, 20)}...` : productName}
+                                  </span>
+                                  <span className="font-semibold text-xs">{quantity}x</span>
+                                </div>
+                              ))
+                            })()}
                           </div>
                         </div>
                       </div>
