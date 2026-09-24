@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus, Minus, Settings, Shield, Download, Moon, Sun, Database, RefreshCw } from "lucide-react"
+import { Trash2, Plus, Minus, Settings, Shield, Download, Moon, Sun, Database, RefreshCw, CheckCircle2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { generateOrdersPDF } from "@/lib/pdf-generator"
 import { ShiftsView } from "@/components/shifts-view"
@@ -98,6 +98,7 @@ export default function MosselweekendCashier() {
   const [isUploading, setIsUploading] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
   const [now, setNow] = useState<number>(() => Date.now())
+  const [successToast, setSuccessToast] = useState<{ code: string; total: number } | null>(null)
   const [cashAmount, setCashAmount] = useState("")
   const [showCashInput, setShowCashInput] = useState(false)
   const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
@@ -262,6 +263,13 @@ export default function MosselweekendCashier() {
     return () => clearInterval(tick)
   }, [])
 
+  // Auto-dismiss the "bestelling geplaatst" confirmation after a few seconds.
+  useEffect(() => {
+    if (!successToast) return
+    const timer = setTimeout(() => setSuccessToast(null), 3500)
+    return () => clearTimeout(timer)
+  }, [successToast])
+
   const addToCart = (item: (typeof menuItems)[0]) => {
     setCart((prev) => {
       const existing = prev.find((cartItem) => cartItem.id === item.id)
@@ -353,6 +361,8 @@ export default function MosselweekendCashier() {
       localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated))
       return updated
     })
+
+    setSuccessToast({ code: orderCode, total: newOrder.total })
 
     clearCart()
     setShowCheckoutConfirm(false)
@@ -549,6 +559,24 @@ export default function MosselweekendCashier() {
 
   return (
     <div className="min-h-screen corporate-background">
+      {successToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed top-6 left-1/2 z-50 -translate-x-1/2 order-toast-enter"
+        >
+          <div className="flex items-center gap-3 rounded-xl bg-emerald-600 px-5 py-3 text-white shadow-2xl ring-1 ring-emerald-400/40">
+            <CheckCircle2 className="h-6 w-6 shrink-0" />
+            <div className="leading-tight">
+              <div className="font-bold">Bestelling geplaatst</div>
+              <div className="text-sm text-emerald-50">
+                #{successToast.code} · €{successToast.total.toFixed(2)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="corporate-header shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
@@ -1231,7 +1259,20 @@ export default function MosselweekendCashier() {
                     <div>
                       <div className="corporate-section-header">Dagstatistieken</div>
                       <div className="corporate-content p-4">
-                        <div className="space-y-3 text-sm">
+                        {orders.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                              <Database className="h-7 w-7 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground">Nog geen bestellingen dit weekend</p>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                De statistieken verschijnen zodra de eerste bestelling is geplaatst.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3 text-sm">
                           <div className="flex justify-between">
                             <span>Totaal bestellingen:</span>
                             <span className="font-semibold">{orders.length}</span>
@@ -1293,7 +1334,8 @@ export default function MosselweekendCashier() {
                               ))
                             })()}
                           </div>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
