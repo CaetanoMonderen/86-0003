@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Trash2, Plus, Minus, Settings, Shield, Download, Moon, Sun, Database } from "lucide-react"
+import { Trash2, Plus, Minus, Settings, Shield, Download, Moon, Sun, Database, RefreshCw } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { generateOrdersPDF } from "@/lib/pdf-generator"
 import { ShiftsView } from "@/components/shifts-view"
@@ -97,6 +97,7 @@ export default function MosselweekendCashier() {
   const [showCheckoutConfirm, setShowCheckoutConfirm] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [now, setNow] = useState<number>(() => Date.now())
   const [cashAmount, setCashAmount] = useState("")
   const [showCashInput, setShowCashInput] = useState(false)
   const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
@@ -253,6 +254,12 @@ export default function MosselweekendCashier() {
       window.removeEventListener("offline", handleOffline)
       clearInterval(interval)
     }
+  }, [])
+
+  // Keep "X min geleden" fresh without needing a new sync to happen.
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 15000)
+    return () => clearInterval(tick)
   }, [])
 
   const addToCart = (item: (typeof menuItems)[0]) => {
@@ -500,6 +507,18 @@ export default function MosselweekendCashier() {
   const currentCategory = categories.find((cat) => cat.id === activeCategory)
   const pendingCount = orders.filter((order) => !order.synced).length
 
+  // Sync freshness: how long since the last successful cloud sync, and whether
+  // that (or a non-empty upload queue / being offline) counts as "stale".
+  const STALE_AFTER_MIN = 2
+  const syncMinutesAgo = lastSyncTime ? Math.floor((now - lastSyncTime.getTime()) / 60000) : null
+  const syncAgeLabel =
+    syncMinutesAgo === null
+      ? "nog niet gesynct"
+      : syncMinutesAgo < 1
+        ? "zonet gesynct"
+        : `${syncMinutesAgo} min geleden`
+  const syncStale = !isOnline || pendingCount > 0 || (syncMinutesAgo !== null && syncMinutesAgo >= STALE_AFTER_MIN)
+
   const handleCheckoutClick = () => {
     if (paymentMethod === "payconic") {
       setShowPayconicConfirm(true)
@@ -539,17 +558,42 @@ export default function MosselweekendCashier() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="status-online flex items-center gap-2">
+              <div className="flex items-center gap-2">
                 <div
-                  className={`w-2 h-2 rounded-full ${
-                    !isOnline ? "bg-red-500" : isUploading ? "bg-yellow-400" : "bg-white"
+                  className={`flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium ${
+                    !isOnline
+                      ? "bg-red-600 text-white"
+                      : isUploading
+                        ? "bg-amber-500 text-white"
+                        : "bg-emerald-500 text-white"
                   }`}
-                ></div>
-                {!isOnline ? "Offline" : isUploading ? "Syncing..." : "Online"}
-                {pendingCount > 0 && <span className="text-xs opacity-75">({pendingCount} in wachtrij)</span>}
-                {lastSyncTime && isOnline && pendingCount === 0 && (
-                  <span className="text-xs opacity-75">(Laatste sync: {lastSyncTime.toLocaleTimeString("nl-BE")})</span>
-                )}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full bg-white ${!isOnline || isUploading ? "animate-pulse" : ""}`}
+                  ></span>
+                  {!isOnline ? "Offline" : isUploading ? "Synchroniseren..." : "Online"}
+                </div>
+
+                <div
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    syncStale
+                      ? "bg-red-500/15 text-red-400 ring-1 ring-red-500/30"
+                      : "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20"
+                  }`}
+                  title={lastSyncTime ? `Laatste sync om ${lastSyncTime.toLocaleTimeString("nl-BE")}` : undefined}
+                >
+                  {pendingCount > 0 ? (
+                    <>
+                      <RefreshCw className={`w-3 h-3 ${isOnline ? "animate-spin" : ""}`} />
+                      {pendingCount} in wachtrij
+                    </>
+                  ) : (
+                    <>
+                      <span className={`w-1.5 h-1.5 rounded-full ${syncStale ? "bg-red-400" : "bg-emerald-400"}`}></span>
+                      {syncAgeLabel}
+                    </>
+                  )}
+                </div>
               </div>
               <Button
                 onClick={handleAdminToggle}
@@ -692,7 +736,7 @@ export default function MosselweekendCashier() {
                       </div>
                       {Number.parseFloat(cashAmount) < calculateTotal() && (
                         <p className="text-red-600 text-sm mt-1">
-                          ⚠️ Amount is less than total! Need €
+                          ��️ Amount is less than total! Need €
                           {(calculateTotal() - Number.parseFloat(cashAmount)).toFixed(2)} more.
                         </p>
                       )}
@@ -944,8 +988,8 @@ export default function MosselweekendCashier() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 corporate-sidebar-container">
-          <div className="corporate-sidebar flex flex-col py-4">
+        <div className="w-64 corporate-sidebar-container p-4">
+          <div className="corporate-sidebar flex flex-col gap-1 p-3">
             {categories.map((category) => {
               return (
                 <button
