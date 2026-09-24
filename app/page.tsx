@@ -99,6 +99,7 @@ export default function MosselweekendCashier() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
   const [now, setNow] = useState<number>(() => Date.now())
   const [successToast, setSuccessToast] = useState<{ code: string; total: number } | null>(null)
+  const [contributionAmount, setContributionAmount] = useState("")
   const [cashAmount, setCashAmount] = useState("")
   const [showCashInput, setShowCashInput] = useState(false)
   const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
@@ -304,6 +305,23 @@ export default function MosselweekendCashier() {
         },
       ]
     })
+  }
+
+  const addContribution = (amount: number) => {
+    if (!Number.isFinite(amount) || amount <= 0) return
+    const rounded = Math.round(amount * 100) / 100
+    setCart((prev) => [
+      ...prev,
+      {
+        // Negative, unique id so contributions never merge with menu items or
+        // with each other, while +/- and remove keep working by id.
+        id: -Date.now(),
+        name: "Vrije bijdrage",
+        price: rounded,
+        quantity: 1,
+      },
+    ])
+    setContributionAmount("")
   }
 
   const removeFromCart = (id: number) => {
@@ -1224,6 +1242,56 @@ export default function MosselweekendCashier() {
                               </div>
                             ))
                           )}
+                        </div>
+
+                        <Separator className="my-4" />
+
+                        <div className="mb-4">
+                          <Label className="text-sm font-medium">Vrije bijdrage</Label>
+                          <div className="mt-1 flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                step="0.5"
+                                value={contributionAmount}
+                                onChange={(e) => setContributionAmount(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                                    addContribution(Number.parseFloat(contributionAmount))
+                                  }
+                                }}
+                                placeholder="Bedrag"
+                                className="pl-7"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              onClick={() => addContribution(Number.parseFloat(contributionAmount))}
+                              disabled={
+                                !contributionAmount || Number.parseFloat(contributionAmount) <= 0
+                              }
+                              className="corporate-primary shrink-0"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Toevoegen
+                            </Button>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {[1, 2, 5, 10].map((amount) => (
+                              <Button
+                                key={amount}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addContribution(amount)}
+                              >
+                                +€{amount}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
 
                         <Separator className="my-4" />
