@@ -14,6 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Plus, Minus, Settings, Shield, Download, Moon, Sun, Database } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { generateOrdersPDF } from "@/lib/pdf-generator"
+import { ShiftsView } from "@/components/shifts-view"
+import { BrickBreaker } from "@/components/brick-breaker"
+
+const ORDERS_STORAGE_KEY = "mosselweekend-orders-2026"
 
 const menuItems = [
   // Main dishes
@@ -98,303 +102,6 @@ export default function MosselweekendCashier() {
   const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
   const [isOnline, setIsOnline] = useState(true)
 
-  // F.I.D.O chatbot state and responses
-  const [showFido, setShowFido] = useState(false)
-  const [fidoMessages, setFidoMessages] = useState<Array<{ text: string; isUser: boolean; timestamp: Date }>>([
-    {
-      text: "Hello! I'm F.I.D.O, your system assistant. I can help you with app functions, menu questions, and system operations. How can I assist you today?",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ])
-  const [fidoInput, setFidoInput] = useState("")
-  const [fidoChallenge86, setFidoChallenge86] = useState({ attempts: 0, awaitingPayment: false })
-
-  // F.I.D.O response system
-  const getFidoResponse = (input: string): string => {
-    const lowerInput = input.toLowerCase()
-
-    if (
-      lowerInput.includes("chiro") ||
-      lowerInput.includes("boortmeerbeek") ||
-      lowerInput.includes("chiro boortmeerbeek")
-    ) {
-      if (lowerInput.includes("what is chiro") || lowerInput.includes("wat is chiro")) {
-        return "Chiro Boortmeerbeek is a youth organization in Boortmeerbeek, Belgium. It's part of the larger Chiro movement, providing fun activities, camps, and leadership development for children and teenagers. They organize weekly meetings, seasonal activities, and summer camps."
-      }
-
-      if (lowerInput.includes("activities") || lowerInput.includes("activiteiten")) {
-        return "Chiro Boortmeerbeek organizes various activities: weekly group meetings with games and crafts, seasonal outdoor activities, summer camps, leadership training, community events, and special themed activities throughout the year. They focus on fun, friendship, and personal development."
-      }
-
-      if (lowerInput.includes("leiding") || lowerInput.includes("leader") || lowerInput.includes("leadership")) {
-        return "Chiro Boortmeerbeek has a structured leadership system: HOOFDLEIDING (Head Leaders) who oversee the entire group and coordinate activities, GROEPSLEIDING (Group Leaders) who work directly with specific age groups, ASPIRANT-LEIDING (Aspiring Leaders) who are teenagers training to become full leaders, and KOOKPLOEG (Kitchen Team) who handle meals during camps. Leaders organize weekly meetings, plan activities, ensure safety, and create a fun environment. They receive training in child development, first aid, and activity planning. Many leaders started as members and grew into leadership roles. If you have the passion to guide young people and create memorable experiences, contact them about becoming a leader!"
-      }
-
-      if (lowerInput.includes("chirokriebel") || lowerInput.includes("kriebel")) {
-        return "The 'Chirokriebel' is that special feeling when you want to join Chiro! It's the excitement and enthusiasm for the Chiro experience - the games, friendships, adventures, and fun times. If you have the Chirokriebel, you're ready to become part of the Chiro family!"
-      }
-
-      if (lowerInput.includes("age") || lowerInput.includes("leeftijd") || lowerInput.includes("how old")) {
-        return "Chiro Boortmeerbeek welcomes children and teenagers of various age groups. They typically have different groups for different ages, from young children to teenagers, each with age-appropriate activities and programs."
-      }
-
-      if (lowerInput.includes("when") || lowerInput.includes("wanneer") || lowerInput.includes("schedule")) {
-        return "Chiro Boortmeerbeek has regular weekly meetings and seasonal activities. Check their monthly planning and yearly calendar on their website for specific dates and times. They also organize special events throughout the year."
-      }
-
-      if (lowerInput.includes("camp") || lowerInput.includes("kamp") || lowerInput.includes("summer")) {
-        return "Chiro Boortmeerbeek organizes exciting summer camps and seasonal activities! These camps are highlights of the Chiro year, featuring outdoor adventures, games, crafts, and unforgettable experiences with friends."
-      }
-
-      if (lowerInput.includes("join") || lowerInput.includes("meedoen") || lowerInput.includes("how to join")) {
-        return "To join Chiro Boortmeerbeek, visit their website at chiroboortmeerbeek.be or contact them directly. They welcome new members and will help you get started with the right age group and activities."
-      }
-
-      if (lowerInput.includes("banier") || lowerInput.includes("newsletter")) {
-        return "De Banier is Chiro Boortmeerbeek's publication/newsletter that keeps members and parents informed about upcoming activities, events, and important information. It's a great way to stay connected with the Chiro community."
-      }
-
-      if (lowerInput.includes("location") || lowerInput.includes("where") || lowerInput.includes("waar")) {
-        return "Chiro Boortmeerbeek is located in Boortmeerbeek, Belgium. They have their own meeting spaces and organize activities both indoors and outdoors, including in nature settings for camps and outdoor adventures."
-      }
-
-      return "Chiro Boortmeerbeek is a vibrant youth organization in Belgium offering fun activities, leadership opportunities, and memorable experiences for children and teenagers. Visit chiroboortmeerbeek.be for more information about joining or becoming a leader!"
-    }
-
-    if (
-      lowerInput.includes("what do you know") ||
-      lowerInput.includes("wat weet je") ||
-      lowerInput.includes("capabilities") ||
-      lowerInput.includes("what can you do")
-    ) {
-      return "I know about: Creating orders and managing cart items, Understanding jeton pricing (yellow/red tokens), Menu categories and navigation, Payment methods (Cash/Payconic), Dark mode toggle, PDF receipt generation, Customer name entry, System functions and troubleshooting, Chiro Boortmeerbeek youth organization and activities. I can also answer basic questions about the Mosselweekend event and cashier operations."
-    }
-
-    if (
-      lowerInput.includes("how does the system work") ||
-      lowerInput.includes("how does it work") ||
-      lowerInput.includes("system work") ||
-      lowerInput.includes("hoe werkt het systeem")
-    ) {
-      return "This is a modern cashier system for Mosselweekend events. It works by: 1) Staff selects items from categorized menus, 2) Items are added to a shopping cart with automatic price calculation, 3) Customer name and payment method are entered, 4) Order is placed and a PDF receipt is generated. The system handles special jeton-based pricing for drinks and integrates with Supabase database for order storage."
-    }
-
-    if (
-      lowerInput.includes("who made") ||
-      lowerInput.includes("who created") ||
-      lowerInput.includes("who built") ||
-      lowerInput.includes("developer") ||
-      lowerInput.includes("creator") ||
-      lowerInput.includes("wie heeft dit gemaakt")
-    ) {
-      return "This cashier system was created and developed by you, the system owner. It's a custom-built solution designed specifically for Mosselweekend events, featuring modern web technologies and a user-friendly interface tailored to Belgian event operations."
-    }
-
-    if (
-      lowerInput.includes("who is caetano") ||
-      lowerInput.includes("caetano") ||
-      lowerInput.includes("administrator") ||
-      lowerInput.includes("admin") ||
-      lowerInput.includes("wie is caetano")
-    ) {
-      return "Caetano is the System Administrator for this cashier system. He handles technical support, system maintenance, troubleshooting complex issues, and user management. If you encounter problems I cannot solve or need advanced system assistance, Caetano is your go-to person for expert help."
-    }
-
-    if (
-      lowerInput.includes("faq") ||
-      lowerInput.includes("frequently asked") ||
-      lowerInput.includes("common questions")
-    ) {
-      return "Common questions: How to create an order? What are jetons? How to change payment method? How to use dark mode? How to print receipts? How to remove items from cart? How to navigate menus? Ask me any of these or other system-related questions!"
-    }
-
-    if (
-      lowerInput.includes("faq") ||
-      lowerInput.includes("frequently asked") ||
-      lowerInput.includes("common questions")
-    ) {
-      return "Common questions: How to create an order? What are jetons? How to change payment method? How to use dark mode? How to print receipts? How to remove items from cart? How to navigate menus? Ask me any of these or other system-related questions!"
-    }
-
-    // System functions
-    if (lowerInput.includes("order") || lowerInput.includes("bestelling")) {
-      return "To create an order: Select items from the menu categories, they'll be added to your cart. Enter customer name and select payment method (Cash/Payconic), then click 'BESTELLING PLAATSEN' to complete the order."
-    }
-
-    if (lowerInput.includes("jeton") || lowerInput.includes("token")) {
-      return "Jetons are drink tokens: GELE JETON (Yellow) = €2.50 for regular drinks, RODE JETON (Red) = €3.50 for premium drinks. When you add drinks to cart, the jeton price is automatically calculated."
-    }
-
-    if (lowerInput.includes("menu") || lowerInput.includes("categories")) {
-      return "Menu categories: HOOFDGERECHTEN (main dishes), JETONS (drink tokens), DRANKEN (drinks), WIJN & SPECIALS (wine & premium), WARME DRANKEN (hot drinks), DESSERTS. Click any category in the sidebar to browse items."
-    }
-
-    if (lowerInput.includes("payment") || lowerInput.includes("betaling")) {
-      return "Payment methods: CASH (cash payment) or PAYCONIC (card payment). Select the method before placing the order. The system will generate a PDF receipt after completion."
-    }
-
-    if (lowerInput.includes("dark") || lowerInput.includes("night") || lowerInput.includes("mode")) {
-      return "Toggle dark/night mode using the moon/sun icon in the top-right corner. This changes the interface to a darker theme for better visibility in low light."
-    }
-
-    if (lowerInput.includes("receipt") || lowerInput.includes("pdf") || lowerInput.includes("bon")) {
-      return "After placing an order, a PDF receipt is automatically generated with order details, customer name, payment method, and total amount. The receipt can be printed or saved."
-    }
-
-    if (lowerInput.includes("customer") || lowerInput.includes("name") || lowerInput.includes("klant")) {
-      return "Enter the customer name in the text field before placing an order. This appears on the receipt and helps track orders during busy periods."
-    }
-
-    if (lowerInput.includes("cart") || lowerInput.includes("winkelwagen")) {
-      return "Your cart shows selected items and total price. Use + and - buttons to adjust quantities, or click the X to remove items completely. The total updates automatically."
-    }
-
-    if (lowerInput.includes("help") || lowerInput.includes("hulp")) {
-      return "I can help with: creating orders, understanding jetons, menu navigation, payment methods, dark mode, receipts, customer names, cart management, system troubleshooting, and general app functions. What specific area do you need help with?"
-    }
-
-    if (lowerInput.includes("hello") || lowerInput.includes("hi") || lowerInput.includes("hallo")) {
-      return "Hello! I'm F.I.D.O, your system assistant for the Mosselweekend cashier system. How can I help you today?"
-    }
-
-    if (lowerInput.includes("thank") || lowerInput.includes("thanks") || lowerInput.includes("bedankt")) {
-      return "You're welcome! I'm here whenever you need help with the system. Feel free to ask me anything about the cashier functions."
-    }
-
-    if (lowerInput.includes("how are you") || lowerInput.includes("hoe gaat het")) {
-      return "I'm functioning perfectly and ready to help with your cashier system needs! How can I assist you today?"
-    }
-
-    if (lowerInput.includes("who are you") || lowerInput.includes("wat ben je") || lowerInput.includes("wie ben je")) {
-      return "I'm F.I.D.O, the built-in assistant for this Mosselweekend cashier system. I help staff and users understand system functions, navigate menus, and troubleshoot common issues."
-    }
-
-    if (lowerInput.includes("mosselweekend") || lowerInput.includes("event") || lowerInput.includes("mussels")) {
-      return "Mosselweekend is a Belgian event featuring mussels and drinks. This cashier system handles orders for the event, including special jeton-based pricing for beverages and traditional cash/card payments."
-    }
-
-    if (
-      lowerInput.includes("what is 86") ||
-      lowerInput.includes("wat is 86") ||
-      lowerInput.includes("about 86") ||
-      lowerInput.includes("tell me about 86")
-    ) {
-      setFidoChallenge86((prev) => ({ ...prev, attempts: prev.attempts + 1 }))
-      if (fidoChallenge86.attempts === 0) {
-        return "86? That's just the company logo you see around here. Nothing special really."
-      } else if (fidoChallenge86.attempts === 1) {
-        return "Still curious about 86? It's more than meets the eye, but I'm not sure you're ready for that information."
-      } else {
-        return "You're persistent, I'll give you that. But information like this doesn't come free. What would you give me in return?"
-      }
-    }
-
-    if (
-      lowerInput.includes("86 company") ||
-      lowerInput.includes("86 business") ||
-      lowerInput.includes("more about 86") ||
-      lowerInput.includes("tell me more about 86")
-    ) {
-      setFidoChallenge86((prev) => ({ ...prev, attempts: prev.attempts + 1 }))
-      if (fidoChallenge86.attempts < 2) {
-        return "Look, 86 is just... well, it's complicated. You'd have to be really persistent to understand."
-      } else {
-        setFidoChallenge86((prev) => ({ ...prev, awaitingPayment: true }))
-        return "You're getting closer to something important. But this kind of information requires payment. What would you give me in return?"
-      }
-    }
-
-    if (
-      lowerInput.includes("what does 86 do") ||
-      lowerInput.includes("86 blueprint") ||
-      lowerInput.includes("86 building") ||
-      lowerInput.includes("founder of 86")
-    ) {
-      setFidoChallenge86((prev) => ({ ...prev, attempts: prev.attempts + 1 }))
-      if (fidoChallenge86.attempts < 3) {
-        return "Ah, now you're getting warmer. But I'm not sure you're ready for that information yet. Keep trying."
-      } else {
-        setFidoChallenge86((prev) => ({ ...prev, awaitingPayment: true }))
-        return "You've proven your dedication. This information comes at a price though. What would you give me in return?"
-      }
-    }
-
-    if (fidoChallenge86.awaitingPayment) {
-      if (
-        lowerInput.includes("my heart") ||
-        lowerInput.includes("my soul") ||
-        lowerInput.includes("mijn hart") ||
-        lowerInput.includes("mijn ziel") ||
-        lowerInput.includes("mcdonalds") ||
-        lowerInput.includes("mcdonald's") ||
-        lowerInput.includes("big mac") ||
-        lowerInput.includes("happy meal") ||
-        lowerInput.includes("quarter pounder") ||
-        lowerInput.includes("mcflurry") ||
-        lowerInput.includes("golden arches")
-      ) {
-        setFidoChallenge86({ attempts: 0, awaitingPayment: false })
-        return "Acceptable payment received. Here's the truth: 86 is the blueprint of a company in building, founded by you, the system creator. It represents the foundation and vision behind innovative technology solutions like this cashier system. You've earned this knowledge through persistence and proper payment."
-      } else {
-        return "That's not sufficient payment for this information. I need something more valuable - perhaps your heart, your soul, or something golden and arched?"
-      }
-    }
-
-    if (
-      (lowerInput.includes("who founded 86") || lowerInput.includes("who created 86")) &&
-      (lowerInput.includes("blueprint") ||
-        lowerInput.includes("building") ||
-        lowerInput.includes("company in building"))
-    ) {
-      setFidoChallenge86((prev) => ({ ...prev, awaitingPayment: true }))
-      return "You're asking the right questions, but this level of information requires payment. What would you give me in return?"
-    }
-
-    if (
-      lowerInput.includes("problem") ||
-      lowerInput.includes("error") ||
-      lowerInput.includes("not working") ||
-      lowerInput.includes("probleem")
-    ) {
-      return "For technical problems: Check if all required fields are filled, ensure customer name is entered, verify payment method is selected, and try refreshing if issues persist. For complex problems, contact Administrator: Caetano."
-    }
-
-    if (lowerInput.includes("slow") || lowerInput.includes("laggy") || lowerInput.includes("traag")) {
-      return "If the system feels slow: Try refreshing the page, check your internet connection, or switch to a different browser. The system works best with modern browsers like Chrome, Firefox, or Safari."
-    }
-
-    if (lowerInput.includes("print") || lowerInput.includes("printer") || lowerInput.includes("printen")) {
-      return "To print receipts: After placing an order, the PDF receipt will automatically download. Open the PDF and use your browser's print function (Ctrl+P or Cmd+P) to print to your connected printer."
-    }
-
-    if (lowerInput.includes("quantity") || lowerInput.includes("aantal") || lowerInput.includes("how many")) {
-      return "To adjust quantities: Use the + and - buttons next to each item in your cart. You can increase or decrease quantities, or click the X to remove items completely."
-    }
-
-    if (lowerInput.includes("price") || lowerInput.includes("cost") || lowerInput.includes("prijs")) {
-      return "Prices are shown for each menu item. Jeton-based drinks show the jeton requirement, and the actual euro cost is calculated automatically when added to cart. The total is always displayed at the bottom of your cart."
-    }
-
-    if (lowerInput.includes("total") || lowerInput.includes("sum") || lowerInput.includes("totaal")) {
-      return "The order total is calculated automatically and shown at the bottom of your cart. It includes all item prices plus any jeton costs converted to euros."
-    }
-
-    // Default fallback
-    return "I don't have specific information about that. Please speak to Administrator: Caetano for further assistance with your question."
-  }
-
-  const handleFidoSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!fidoInput.trim()) return
-
-    const userMessage = { text: fidoInput, isUser: true, timestamp: new Date() }
-    const botResponse = { text: getFidoResponse(fidoInput), isUser: false, timestamp: new Date() }
-
-    setFidoMessages((prev) => [...prev, userMessage, botResponse])
-    setFidoInput("")
-  }
-
   const supabase = createClient()
 
   const categories = [
@@ -404,7 +111,8 @@ export default function MosselweekendCashier() {
     { id: "wijn", name: "WIJN & SPECIALS", icon: null },
     { id: "warme-dranken", name: "WARME DRANKEN", icon: null },
     { id: "desserts", name: "DESSERTS", icon: null },
-    { id: "fido", name: "F.I.D.O", icon: "" },
+    { id: "shiften", name: "SHIFTEN", icon: null },
+    { id: "game", name: "BRICK BREAKER", icon: null },
   ]
 
   const generateOrderCode = () => {
@@ -429,7 +137,7 @@ export default function MosselweekendCashier() {
   const markOrderSynced = (orderCode: string) => {
     setOrders((prev) => {
       const updated = prev.map((o) => (o.order_code === orderCode ? { ...o, synced: true } : o))
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updated))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated))
       return updated
     })
   }
@@ -444,7 +152,7 @@ export default function MosselweekendCashier() {
     try {
       if (showSpinner) setIsUploading(true)
 
-      const local: Order[] = JSON.parse(localStorage.getItem("mosselweekend-orders") || "[]")
+      const local: Order[] = JSON.parse(localStorage.getItem(ORDERS_STORAGE_KEY) || "[]")
       const pending = local.filter((order) => !order.synced)
 
       for (const order of pending) {
@@ -475,7 +183,7 @@ export default function MosselweekendCashier() {
       if (error) {
         // Pull failed (likely a flaky connection) — keep whatever we pushed so
         // no data is lost, and let the next sync reconcile.
-        localStorage.setItem("mosselweekend-orders", JSON.stringify(local))
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(local))
         setOrders(local)
         return
       }
@@ -487,7 +195,7 @@ export default function MosselweekendCashier() {
       const merged = [...stillPending, ...cloud]
 
       setOrders(merged)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(merged))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(merged))
       setLastSyncTime(new Date())
     } catch (error) {
       console.error("[v0] Sync error:", error)
@@ -498,7 +206,7 @@ export default function MosselweekendCashier() {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const savedOrders = localStorage.getItem("mosselweekend-orders")
+      const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY)
       if (savedOrders) {
         setOrders(JSON.parse(savedOrders))
       }
@@ -635,7 +343,7 @@ export default function MosselweekendCashier() {
     // the order is recorded instantly and uploaded in the background.
     setOrders((prev) => {
       const updated = [newOrder, ...prev]
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updated))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated))
       return updated
     })
 
@@ -674,15 +382,9 @@ export default function MosselweekendCashier() {
   }
 
   const handleCategoryChange = (categoryId: string) => {
-    if (categoryId === "fido") {
-      setShowFido(true)
-      return
-    }
-
     if (categoryId === activeCategory) return
 
     setIsTransitioning(true)
-    setShowFido(false) // Hide F.I.D.O when switching to other categories
 
     setTimeout(() => {
       setActiveCategory(categoryId)
@@ -702,7 +404,7 @@ export default function MosselweekendCashier() {
   }
 
   const verifyAdminCode = () => {
-    if (adminCode === "admin86") {
+    if (adminCode === "admin123") {
       setIsAdminMode(true)
       localStorage.setItem("mosselweekend-admin-mode", "true")
       setShowAdminDialog(false)
@@ -757,13 +459,13 @@ export default function MosselweekendCashier() {
 
       const updatedOrders = orders.map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
       setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updatedOrders))
       setEditingOrder(null)
     } catch (error) {
       console.error("Error updating order:", error)
       const updatedOrders = orders.map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
       setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updatedOrders))
       setEditingOrder(null)
     }
   }
@@ -781,12 +483,12 @@ export default function MosselweekendCashier() {
 
       const updatedOrders = orders.filter((order) => order.id !== orderId)
       setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updatedOrders))
     } catch (error) {
       console.error("Error deleting order:", error)
       const updatedOrders = orders.filter((order) => order.id !== orderId)
       setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
+      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updatedOrders))
     }
   }
 
@@ -1250,9 +952,7 @@ export default function MosselweekendCashier() {
                   key={category.id}
                   onClick={() => handleCategoryChange(category.id)}
                   className={`corporate-sidebar-item p-3 flex items-center gap-3 text-left ${
-                    (activeCategory === category.id && !showFido) || (category.id === "fido" && showFido)
-                      ? "active"
-                      : ""
+                    activeCategory === category.id ? "active" : ""
                   }`}
                 >
                   {category.icon && <span className="text-lg">{category.icon}</span>}
@@ -1265,53 +965,10 @@ export default function MosselweekendCashier() {
 
         {/* Main Content */}
         <div className="flex-1 p-6">
-          {/* F.I.D.O chatbot interface */}
-          {showFido ? (
-            <div className="h-full flex flex-col">
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">F.I.D.O Assistant</h2>
-                <p className="text-gray-600 dark:text-gray-300">Your intelligent system helper</p>
-              </div>
-
-              <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col">
-                {/* Chat Messages */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-4 max-h-96">
-                  {fidoMessages.map((message, index) => (
-                    <div key={index} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.isUser
-                            ? "bg-red-600 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white"
-                        }`}
-                      >
-                        <p className="text-sm">{message.text}</p>
-                        <p className="text-xs opacity-70 mt-1">{message.timestamp.toLocaleTimeString()}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Chat Input */}
-                <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-                  <form onSubmit={handleFidoSubmit} className="flex gap-2">
-                    <input
-                      type="text"
-                      value={fidoInput}
-                      onChange={(e) => setFidoInput(e.target.value)}
-                      placeholder="Ask F.I.D.O about system functions..."
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-                    >
-                      Send
-                    </button>
-                  </form>
-                </div>
-              </div>
-            </div>
+          {activeCategory === "shiften" ? (
+            <ShiftsView />
+          ) : activeCategory === "game" ? (
+            <BrickBreaker />
           ) : (
             <>
               <div
