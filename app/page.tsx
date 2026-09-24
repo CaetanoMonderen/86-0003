@@ -1151,6 +1151,57 @@ export default function MosselweekendCashier() {
                           </div>
                         ))}
                       </div>
+
+                      {activeCategory === "jetons" && (
+                        <div className="mt-6 corporate-card p-4">
+                          <Label className="text-sm font-semibold">Vrije bijdrage</Label>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Voeg een zelf gekozen bedrag toe aan de bestelling.
+                          </p>
+                          <div className="mt-3 flex items-center gap-2">
+                            <div className="relative flex-1">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                              <Input
+                                type="number"
+                                inputMode="decimal"
+                                min="0"
+                                step="0.5"
+                                value={contributionAmount}
+                                onChange={(e) => setContributionAmount(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                                    addContribution(Number.parseFloat(contributionAmount))
+                                  }
+                                }}
+                                placeholder="Bedrag"
+                                className="pl-7"
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              onClick={() => addContribution(Number.parseFloat(contributionAmount))}
+                              disabled={!contributionAmount || Number.parseFloat(contributionAmount) <= 0}
+                              className="corporate-primary shrink-0"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Toevoegen
+                            </Button>
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {[1, 2, 5, 10].map((amount) => (
+                              <Button
+                                key={amount}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addContribution(amount)}
+                              >
+                                +€{amount}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1242,56 +1293,6 @@ export default function MosselweekendCashier() {
                               </div>
                             ))
                           )}
-                        </div>
-
-                        <Separator className="my-4" />
-
-                        <div className="mb-4">
-                          <Label className="text-sm font-medium">Vrije bijdrage</Label>
-                          <div className="mt-1 flex items-center gap-2">
-                            <div className="relative flex-1">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
-                              <Input
-                                type="number"
-                                inputMode="decimal"
-                                min="0"
-                                step="0.5"
-                                value={contributionAmount}
-                                onChange={(e) => setContributionAmount(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
-                                    addContribution(Number.parseFloat(contributionAmount))
-                                  }
-                                }}
-                                placeholder="Bedrag"
-                                className="pl-7"
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              onClick={() => addContribution(Number.parseFloat(contributionAmount))}
-                              disabled={
-                                !contributionAmount || Number.parseFloat(contributionAmount) <= 0
-                              }
-                              className="corporate-primary shrink-0"
-                            >
-                              <Plus className="w-4 h-4 mr-1" />
-                              Toevoegen
-                            </Button>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {[1, 2, 5, 10].map((amount) => (
-                              <Button
-                                key={amount}
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addContribution(amount)}
-                              >
-                                +€{amount}
-                              </Button>
-                            ))}
-                          </div>
                         </div>
 
                         <Separator className="my-4" />
