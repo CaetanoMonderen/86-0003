@@ -17,15 +17,15 @@ import { generateOrdersPDF } from "@/lib/pdf-generator"
 
 const menuItems = [
   // Main dishes
-  { id: 1, name: "MOSSELEN NATUUR", price: 25.0, category: "hoofdgerechten" },
+  { id: 1, name: "MOSSELEN NATUUR", price: 26.0, category: "hoofdgerechten" },
   { id: 2, name: "MOSSELEN KLEIN", price: 17.0, category: "hoofdgerechten" },
-  { id: 3, name: "STOOFVLEES", price: 20.0, category: "hoofdgerechten" },
-  { id: 4, name: "STOOFVLEES KLEIN", price: 12.0, category: "hoofdgerechten" },
-  { id: 5, name: "VOL-AU-VENT", price: 20.0, category: "hoofdgerechten" },
-  { id: 6, name: "VOL-AU-VENT KLEIN", price: 12.0, category: "hoofdgerechten" },
-  { id: 7, name: "VEGGIE: CURRY MET WOKGROENTEN", price: 16.0, category: "hoofdgerechten" },
-  { id: 8, name: "VEGGIE: CURRY MET WOKGROENTEN KLEIN", price: 10.0, category: "hoofdgerechten" },
-  { id: 9, name: "CURRYWORST (2)", price: 11.0, category: "hoofdgerechten" },
+  { id: 5, name: "VOL-AU-VENT", price: 22.0, category: "hoofdgerechten" },
+  { id: 6, name: "VOL-AU-VENT KLEIN", price: 15.0, category: "hoofdgerechten" },
+  { id: 3, name: "STOOFVLEES", price: 22.0, category: "hoofdgerechten" },
+  { id: 4, name: "STOOFVLEES KLEIN", price: 15.0, category: "hoofdgerechten" },
+  { id: 9, name: "EÉN CURRYWORST", price: 11.0, category: "hoofdgerechten" },
+  { id: 27, name: "TWEE CURRYWORSTEN", price: 15.0, category: "hoofdgerechten" },
+  { id: 7, name: "VEGGIE", price: 18.0, category: "hoofdgerechten" },
 
   // Jetons
   { id: 10, name: "GELE JETON", price: 2.5, category: "jetons" },
@@ -33,7 +33,8 @@ const menuItems = [
 
   // Desserts
   { id: 12, name: "RIJSTPAP", price: 5.0, category: "desserts" },
-  { id: 13, name: "WATERIJSJE", price: 3.5, category: "desserts" },
+  { id: 13, name: "IJSJE", price: 3.5, category: "desserts" },
+  { id: 28, name: "CHOCOMOUSSE", price: 5.0, category: "desserts" },
 
   // Beverages with jetons
   { id: 14, name: "PILS", price: 0, category: "dranken", jetons: "1 GELE JETON" },
@@ -67,10 +68,13 @@ interface Order {
   id: string
   order_code: string
   customer_name: string
+  customerName?: string
   items: CartItem[]
   total: number
   payment_method: "cash" | "payconic"
+  paymentMethod?: "cash" | "payconic"
   timestamp: Date
+  synced?: boolean
 }
 
 export default function MosselweekendCashier() {
@@ -92,6 +96,7 @@ export default function MosselweekendCashier() {
   const [cashAmount, setCashAmount] = useState("")
   const [showCashInput, setShowCashInput] = useState(false)
   const [showPayconicConfirm, setShowPayconicConfirm] = useState(false)
+  const [isOnline, setIsOnline] = useState(true)
 
   // F.I.D.O chatbot state and responses
   const [showFido, setShowFido] = useState(false)
@@ -408,21 +413,49 @@ export default function MosselweekendCashier() {
     return `MW-${timestamp}-${random}`.toUpperCase()
   }
 
-  const syncOrdersWithCloud = async () => {
+  const formatCloudOrder = (order: any): Order => ({
+    id: order.id?.toString() ?? order.order_code,
+    order_code: order.order_code,
+    customer_name: order.customer_name,
+    customerName: order.customer_name,
+    items: order.items,
+    total: order.total,
+    payment_method: order.payment_method,
+    paymentMethod: order.payment_method,
+    timestamp: new Date(order.timestamp),
+    synced: true,
+  })
+
+  const markOrderSynced = (orderCode: string) => {
+    setOrders((prev) => {
+      const updated = prev.map((o) => (o.order_code === orderCode ? { ...o, synced: true } : o))
+      localStorage.setItem("mosselweekend-orders", JSON.stringify(updated))
+      return updated
+    })
+  }
+
+  // Push only the orders that have not been saved to the cloud yet, then pull
+  // the authoritative list. This keeps every sync cheap even after hundreds of
+  // orders: we never re-upload orders that are already synced, so the app stays
+  // responsive throughout a busy weekend.
+  const syncOrders = async ({ showSpinner = false }: { showSpinner?: boolean } = {}) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) return
+
     try {
-      setIsUploading(true)
+      if (showSpinner) setIsUploading(true)
 
-      const localOrders = JSON.parse(localStorage.getItem("mosselweekend-orders") || "[]")
+      const local: Order[] = JSON.parse(localStorage.getItem("mosselweekend-orders") || "[]")
+      const pending = local.filter((order) => !order.synced)
 
-      for (const order of localOrders) {
+      for (const order of pending) {
         const { error } = await supabase.from("orders").upsert(
           {
             order_code: order.order_code || generateOrderCode(),
-            customer_name: order.customerName || order.customer_name,
+            customer_name: order.customer_name || order.customerName,
             items: order.items,
             total: order.total,
-            payment_method: order.paymentMethod || order.payment_method,
-            timestamp: order.timestamp,
+            payment_method: order.payment_method || order.paymentMethod,
+            timestamp: new Date(order.timestamp).toISOString(),
           },
           {
             onConflict: "order_code",
@@ -430,41 +463,36 @@ export default function MosselweekendCashier() {
           },
         )
 
-        if (error) {
-          console.error("Error uploading order:", error)
-        }
+        if (!error) order.synced = true
       }
 
       const { data: cloudOrders, error } = await supabase
         .from("orders")
         .select("*")
         .order("timestamp", { ascending: false })
+        .limit(2000)
 
       if (error) {
-        console.error("Error fetching orders:", error)
+        // Pull failed (likely a flaky connection) — keep whatever we pushed so
+        // no data is lost, and let the next sync reconcile.
+        localStorage.setItem("mosselweekend-orders", JSON.stringify(local))
+        setOrders(local)
         return
       }
 
-      const formattedOrders =
-        cloudOrders?.map((order) => ({
-          id: order.id,
-          order_code: order.order_code,
-          customerName: order.customer_name,
-          customer_name: order.customer_name,
-          items: order.items,
-          total: order.total,
-          paymentMethod: order.payment_method,
-          payment_method: order.payment_method,
-          timestamp: new Date(order.timestamp),
-        })) || []
+      const cloud = (cloudOrders || []).map(formatCloudOrder)
+      const cloudCodes = new Set(cloud.map((o) => o.order_code))
+      // Preserve orders still queued locally that the cloud hasn't stored yet.
+      const stillPending = local.filter((o) => !o.synced && !cloudCodes.has(o.order_code))
+      const merged = [...stillPending, ...cloud]
 
-      setOrders(formattedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(formattedOrders))
+      setOrders(merged)
+      localStorage.setItem("mosselweekend-orders", JSON.stringify(merged))
       setLastSyncTime(new Date())
     } catch (error) {
-      console.error("Sync error:", error)
+      console.error("[v0] Sync error:", error)
     } finally {
-      setIsUploading(false)
+      if (showSpinner) setIsUploading(false)
     }
   }
 
@@ -486,15 +514,37 @@ export default function MosselweekendCashier() {
         document.documentElement.classList.add("dark")
       }
 
-      await syncOrdersWithCloud()
+      await syncOrders({ showSpinner: true })
     }
 
     loadInitialData()
   }, [])
 
+  // Periodic background sync plus reaction to connectivity changes, so orders
+  // placed while offline are flushed the moment the connection returns.
   useEffect(() => {
-    const interval = setInterval(syncOrdersWithCloud, 30000)
-    return () => clearInterval(interval)
+    if (typeof navigator !== "undefined") {
+      setIsOnline(navigator.onLine)
+    }
+
+    const handleOnline = () => {
+      setIsOnline(true)
+      void syncOrders({ showSpinner: true })
+    }
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+
+    const interval = setInterval(() => {
+      void syncOrders()
+    }, 30000)
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+      clearInterval(interval)
+    }
   }, [])
 
   const addToCart = (item: (typeof menuItems)[0]) => {
@@ -554,7 +604,7 @@ export default function MosselweekendCashier() {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0)
   }
 
-  const processOrder = async () => {
+  const processOrder = () => {
     if (cart.length === 0) return
 
     if (paymentMethod === "cash" && showCashInput) {
@@ -577,45 +627,49 @@ export default function MosselweekendCashier() {
       payment_method: paymentMethod,
       paymentMethod,
       timestamp: new Date(),
+      synced: false,
     }
 
-    try {
-      setIsUploading(true)
+    // Save locally and reset the UI immediately so the cashier is never blocked
+    // waiting on the network. This is the key to staying fast under heavy load:
+    // the order is recorded instantly and uploaded in the background.
+    setOrders((prev) => {
+      const updated = [newOrder, ...prev]
+      localStorage.setItem("mosselweekend-orders", JSON.stringify(updated))
+      return updated
+    })
 
+    clearCart()
+    setShowCheckoutConfirm(false)
+    setCashAmount("")
+    setShowCashInput(false)
+
+    // Fire-and-forget upload. If it fails or we're offline, the order stays
+    // queued (synced: false) and the periodic sync retries it automatically.
+    void saveOrderToCloud(newOrder)
+  }
+
+  const saveOrderToCloud = async (order: Order) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) return
+
+    try {
       const { error } = await supabase.from("orders").insert({
-        order_code: orderCode,
-        customer_name: customerName.trim() || "Anonieme klant",
-        items: cart,
-        total: calculateTotal(),
-        payment_method: paymentMethod,
-        timestamp: new Date().toISOString(),
+        order_code: order.order_code,
+        customer_name: order.customer_name,
+        items: order.items,
+        total: order.total,
+        payment_method: order.payment_method,
+        timestamp: new Date(order.timestamp).toISOString(),
       })
 
       if (error) {
-        console.error("Error uploading order:", error)
+        console.error("[v0] Order queued, will retry on next sync:", error)
+        return
       }
 
-      const updatedOrders = [newOrder, ...orders]
-      setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
-
-      clearCart()
-      setShowCheckoutConfirm(false)
-      setCashAmount("")
-      setShowCashInput(false)
-
-      await syncOrdersWithCloud()
+      markOrderSynced(order.order_code)
     } catch (error) {
-      console.error("Error processing order:", error)
-      const updatedOrders = [newOrder, ...orders]
-      setOrders(updatedOrders)
-      localStorage.setItem("mosselweekend-orders", JSON.stringify(updatedOrders))
-      clearCart()
-      setShowCheckoutConfirm(false)
-      setCashAmount("")
-      setShowCashInput(false)
-    } finally {
-      setIsUploading(false)
+      console.error("[v0] Order queued, will retry on next sync:", error)
     }
   }
 
@@ -742,6 +796,7 @@ export default function MosselweekendCashier() {
 
   const filteredItems = menuItems.filter((item) => item.category === activeCategory)
   const currentCategory = categories.find((cat) => cat.id === activeCategory)
+  const pendingCount = orders.filter((order) => !order.synced).length
 
   const handleCheckoutClick = () => {
     if (paymentMethod === "payconic") {
@@ -783,10 +838,15 @@ export default function MosselweekendCashier() {
             </div>
             <div className="flex items-center gap-4">
               <div className="status-online flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${isUploading ? "bg-yellow-400" : "bg-white"}`}></div>
-                {isUploading ? "Syncing..." : "Online"}
-                {lastSyncTime && (
-                  <span className="text-xs opacity-75">(Last sync: {lastSyncTime.toLocaleTimeString("nl-BE")})</span>
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    !isOnline ? "bg-red-500" : isUploading ? "bg-yellow-400" : "bg-white"
+                  }`}
+                ></div>
+                {!isOnline ? "Offline" : isUploading ? "Syncing..." : "Online"}
+                {pendingCount > 0 && <span className="text-xs opacity-75">({pendingCount} in wachtrij)</span>}
+                {lastSyncTime && isOnline && pendingCount === 0 && (
+                  <span className="text-xs opacity-75">(Laatste sync: {lastSyncTime.toLocaleTimeString("nl-BE")})</span>
                 )}
               </div>
               <Button
@@ -999,7 +1059,7 @@ export default function MosselweekendCashier() {
               <span>All Previous Orders - Admin View</span>
               <div className="flex gap-2">
                 <Button
-                  onClick={syncOrdersWithCloud}
+                  onClick={() => syncOrders({ showSpinner: true })}
                   variant="outline"
                   size="sm"
                   disabled={isUploading}
